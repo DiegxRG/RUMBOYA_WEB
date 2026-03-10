@@ -76,7 +76,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-secondary-50 text-secondary-900 font-sans selection:bg-primary-500 selection:text-white">
+        <div className="min-h-screen bg-[#07121d] font-sans selection:bg-cyan-500/30 selection:text-white">
           <AppRoutes />
         </div>
       </Router>
