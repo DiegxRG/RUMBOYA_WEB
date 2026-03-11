@@ -60,14 +60,14 @@ const moduleCards = [
 
 const roleCards = [
     {
-        icon: ShieldCheck,
-        title: 'Super Admin RumboYa',
-        description: 'Vista macro de empresas, rutas activas, estados globales e indicadores de plataforma.',
-    },
-    {
         icon: Building2,
         title: 'Admin de Empresa',
         description: 'Panel enfocado en flota, choferes, codigos de invitacion y decisiones operativas del dia.',
+    },
+    {
+        icon: Users,
+        title: 'Flota y personal',
+        description: 'Aprueba choferes y cobradores, gestiona solicitudes y supervisa asignaciones en tiempo real.',
     },
 ];
 
@@ -139,206 +139,155 @@ export default function LandingPage() {
                 </motion.header>
 
                 <main className="flex-1">
-                    <section className="grid items-center gap-12 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:py-[4.5rem]">
+                    <section className="grid items-center gap-8 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:py-14">
+                        {/* Columna de texto */}
                         <motion.div
                             initial="hidden"
                             animate="show"
                             variants={fadeUp}
                             custom={0.1}
-                            className="max-w-3xl"
+                            className="max-w-xl"
                         >
-                            <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-100">
+                            <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-100">
                                 <Radio className="h-4 w-4" />
                                 Panel web administrativo RumboYa
                             </div>
 
-                            <h1 className="font-display text-[clamp(3.2rem,9vw,7.2rem)] leading-[0.86] tracking-[-0.04em] text-white">
-                                Administra rutas, flota y operacion de RumboYa desde un solo centro de control.
+                            <h1 className="font-display text-[clamp(2.2rem,4.5vw,4rem)] leading-[1.05] tracking-[-0.03em] text-white">
+                                Administra tu flota, rutas y personal desde un solo panel de control.
                             </h1>
 
-                            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/[0.72] md:text-xl">
-                                Este sistema web nace de la app movil Chapa Tu Combi: pasajeros que buscan
-                                rutas, choferes que transmiten ubicacion, cobradores que validan tickets y
-                                empresas que necesitan ordenar su operacion diaria con visibilidad real.
+                            <p className="mt-5 max-w-lg text-base leading-7 text-white/[0.68]">
+                                Conecta la operación web con la app móvil RumboYa. Supervisa choferes,
+                                aprueba cobradores y sigue tus combis en tiempo real.
                             </p>
 
-                            <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+                            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                                 <button
                                     onClick={() => navigate('/login')}
-                                    className="group inline-flex items-center justify-center gap-3 rounded-full border border-cyan-300/30 bg-cyan-400 px-7 py-4 font-display text-sm font-semibold uppercase tracking-[0.22em] text-[#05111b] transition-all hover:-translate-y-0.5 hover:bg-cyan-300 hover:shadow-[0_20px_50px_rgba(34,211,238,0.25)]"
+                                    className="group inline-flex items-center justify-center gap-3 rounded-full border border-cyan-300/30 bg-cyan-400 px-7 py-3.5 font-display text-sm font-semibold uppercase tracking-[0.22em] text-[#05111b] transition-all hover:-translate-y-0.5 hover:bg-cyan-300 hover:shadow-[0_20px_50px_rgba(34,211,238,0.25)]"
                                 >
                                     Entrar al sistema
                                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                                 </button>
-                                <button
-                                    onClick={() => navigate('/admin')}
-                                    className="inline-flex items-center justify-center gap-3 rounded-full border border-white/[0.12] bg-white/[0.08] px-7 py-4 text-sm font-semibold uppercase tracking-[0.2em] text-white/[0.88] transition-all hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.12]"
-                                >
-                                    Ver demo admin
-                                </button>
                             </div>
 
-                            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-                                {signalCards.map((card, index) => (
-                                    <motion.article
-                                        key={card.label}
-                                        initial="hidden"
-                                        animate="show"
-                                        variants={fadeUp}
-                                        custom={0.18 + index * 0.08}
-                                        className="rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-5 backdrop-blur-xl"
-                                    >
-                                        <p className="text-xs uppercase tracking-[0.2em] text-white/[0.48]">{card.label}</p>
-                                        <p className="mt-3 font-display text-4xl font-semibold tracking-[-0.05em] text-white">
-                                            {card.value}
-                                        </p>
-                                        <p className="mt-3 text-sm leading-6 text-white/[0.58]">{card.detail}</p>
-                                    </motion.article>
+                            {/* Stats compactas */}
+                            <div className="mt-8 flex flex-wrap gap-4">
+                                {[
+                                    { label: 'Flota conectada', value: '148+' },
+                                    { label: 'Operaciones/día', value: '3.4K' },
+                                    { label: 'Tiempo real', value: '24/7' },
+                                ].map(({ label, value }) => (
+                                    <div key={label} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-3">
+                                        <p className="font-display text-xl text-white">{value}</p>
+                                        <p className="mt-0.5 text-xs uppercase tracking-widest text-white/40">{label}</p>
+                                    </div>
                                 ))}
                             </div>
                         </motion.div>
 
+                        {/* Mock app móvil — más grande */}
                         <motion.div
                             initial="hidden"
                             animate="show"
                             variants={fadeUp}
                             custom={0.2}
-                            className="relative"
+                            className="relative flex justify-center py-8"
                         >
-                            <div className="route-panel relative overflow-hidden rounded-[2rem] border border-white/[0.12] bg-[rgba(8,19,32,0.88)] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-                                <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/60 to-transparent" />
+                            {/* Glow de fondo */}
+                            <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[36rem] w-[36rem] rounded-full bg-cyan-400/[0.08] blur-[100px]" />
 
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                    <div>
-                                        <p className="text-xs uppercase tracking-[0.26em] text-white/[0.42]">
-                                            Simulacion conceptual
-                                        </p>
-                                        <h2 className="mt-2 font-display text-2xl font-semibold text-white">
-                                            Centro de operacion metropolitana
-                                        </h2>
-                                    </div>
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs uppercase tracking-[0.22em] text-emerald-200">
-                                        <span className="h-2 w-2 rounded-full bg-emerald-300 route-pulse" />
-                                        En linea
+                            {/* Teléfono principal */}
+                            <motion.div
+                                animate={{ y: [0, -14, 0] }}
+                                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                                className="relative w-[320px] rounded-[3rem] border-2 border-white/[0.15] bg-[#050e18] shadow-[0_50px_120px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] overflow-hidden z-10"
+                            >
+                                {/* Status bar */}
+                                <div className="flex items-center justify-between px-6 pt-5 pb-3">
+                                    <span className="text-[11px] uppercase tracking-widest text-white/30 font-medium">RumboYa!</span>
+                                    <div className="flex gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-cyan-400 route-pulse" />
+                                        <span className="h-2 w-2 rounded-full bg-white/15" />
+                                        <span className="h-2 w-2 rounded-full bg-white/15" />
                                     </div>
                                 </div>
 
-                                <div className="mt-5 grid grid-cols-2 gap-3">
-                                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-white/[0.45]">Rutas activas</p>
-                                        <p className="mt-3 font-display text-3xl text-white">07</p>
-                                        <p className="mt-2 text-sm text-white/[0.55]">2 corredores VIP y 5 lineas urbanas.</p>
-                                    </div>
-                                    <div className="rounded-2xl border border-cyan-300/18 bg-cyan-400/10 p-4">
-                                        <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/[0.8]">Flujo operativo</p>
-                                        <p className="mt-3 font-display text-3xl text-white">94%</p>
-                                        <p className="mt-2 text-sm text-white/[0.65]">Cobertura alta de unidades seguidas en tiempo real.</p>
-                                    </div>
-                                </div>
-
-                                <div className="relative mt-5 overflow-hidden rounded-[1.75rem] border border-cyan-300/10 bg-[#091a2a] p-4">
-                                    <div className="route-grid absolute inset-0 opacity-25" />
-                                    <svg
-                                        viewBox="0 0 520 300"
-                                        className="absolute inset-0 h-full w-full"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        aria-hidden="true"
-                                    >
-                                        <path
-                                            d="M28 238C84 202 126 186 164 170C211 150 243 119 274 91C313 55 360 42 493 48"
-                                            stroke="rgba(56,189,248,0.88)"
-                                            strokeWidth="5"
-                                            strokeLinecap="round"
-                                            className="route-path"
-                                        />
-                                        <path
-                                            d="M68 273C132 253 183 222 228 190C277 154 305 150 336 167C377 189 410 221 492 244"
-                                            stroke="rgba(250,204,21,0.88)"
-                                            strokeWidth="4"
-                                            strokeLinecap="round"
-                                            strokeDasharray="10 12"
-                                            className="route-dash"
-                                        />
-                                        <circle cx="164" cy="170" r="8" fill="#f8fafc" />
-                                        <circle cx="274" cy="91" r="8" fill="#f8fafc" />
-                                        <circle cx="336" cy="167" r="7" fill="#facc15" />
-                                        <circle cx="492" cy="244" r="7" fill="#f8fafc" />
-                                        <circle cx="409" cy="48" r="10" fill="#22d3ee" className="route-pulse-dot" />
+                                {/* Mapa SVG más grande */}
+                                <div className="relative mx-4 overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-[#091a2a]" style={{ height: '210px' }}>
+                                    <div className="route-grid absolute inset-0 opacity-20" />
+                                    <svg viewBox="0 0 320 210" className="absolute inset-0 h-full w-full" fill="none">
+                                        <path d="M16 175 C60 155 95 135 140 108 C185 81 218 62 304 52" stroke="rgba(56,189,248,0.95)" strokeWidth="4" strokeLinecap="round" className="route-path" />
+                                        <path d="M16 192 C70 175 115 158 162 147 C208 135 242 137 304 155" stroke="rgba(250,204,21,0.75)" strokeWidth="3" strokeLinecap="round" strokeDasharray="9 10" className="route-dash" />
+                                        <circle cx="140" cy="108" r="6" fill="#f8fafc" opacity="0.9" />
+                                        <circle cx="210" cy="78" r="5" fill="#facc15" />
+                                        <circle cx="280" cy="55" r="5" fill="#f8fafc" opacity="0.7" />
+                                        <circle cx="110" cy="122" r="9" fill="#22d3ee" className="route-pulse-dot" />
+                                        <circle cx="110" cy="122" r="16" fill="rgba(34,211,238,0.12)" className="route-pulse-dot" />
                                     </svg>
-
-                                    <div className="relative z-10 flex items-start justify-between gap-4">
-                                        <div className="rounded-2xl border border-white/10 bg-[rgba(7,19,30,0.78)] px-4 py-3">
-                                            <p className="text-xs uppercase tracking-[0.22em] text-white/[0.45]">Eje principal</p>
-                                            <p className="mt-2 font-display text-xl text-white">Ruta A1 Centro - Norte</p>
+                                    {/* Badge */}
+                                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between rounded-xl border border-white/[0.1] bg-[rgba(7,18,29,0.88)] px-3.5 py-2 backdrop-blur-sm">
+                                        <div className="flex items-center gap-2">
+                                            <span className="h-2 w-2 rounded-full bg-emerald-400 route-pulse" />
+                                            <span className="text-[10px] uppercase tracking-widest text-white/60">En ruta</span>
                                         </div>
-                                        <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-right">
-                                            <p className="text-xs uppercase tracking-[0.22em] text-white/[0.45]">Ventana critica</p>
-                                            <p className="mt-2 text-sm text-white/[0.78]">18:10 - 19:00</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative z-10 mt-28 grid gap-3 sm:grid-cols-2">
-                                        <div className="rounded-2xl border border-white/10 bg-[rgba(6,17,27,0.8)] p-4">
-                                            <div className="flex items-center gap-3 text-cyan-100">
-                                                <Activity className="h-4 w-4" />
-                                                <span className="text-xs uppercase tracking-[0.2em]">Estado de flota</span>
-                                            </div>
-                                            <p className="mt-3 text-sm leading-6 text-white/[0.7]">
-                                                18 combis en ruta, 4 en pausa operativa y 2 bajo revision.
-                                            </p>
-                                        </div>
-                                        <div className="rounded-2xl border border-white/10 bg-[rgba(6,17,27,0.8)] p-4">
-                                            <div className="flex items-center gap-3 text-amber-200">
-                                                <ScanSearch className="h-4 w-4" />
-                                                <span className="text-xs uppercase tracking-[0.2em]">Incidencias visibles</span>
-                                            </div>
-                                            <p className="mt-3 text-sm leading-6 text-white/[0.7]">
-                                                Trafico, paraderos saturados y reportes listos para soporte.
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <motion.div
-                                        animate={{ y: [0, -10, 0] }}
-                                        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                                        className="absolute right-4 top-[4.5rem] z-10 w-[14rem] rounded-[1.6rem] border border-cyan-300/18 bg-[rgba(7,19,31,0.88)] p-4 shadow-[0_20px_60px_rgba(6,182,212,0.18)] backdrop-blur-xl"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <p className="text-xs uppercase tracking-[0.2em] text-white/[0.45]">Unidad conectada</p>
-                                            <Navigation className="h-4 w-4 text-cyan-200" />
-                                        </div>
-                                        <p className="mt-3 font-display text-2xl text-white">RY-214</p>
-                                        <p className="mt-2 text-sm text-white/[0.62]">
-                                            4 min de desfase. 32 pasajeros proyectados.
-                                        </p>
-                                    </motion.div>
-                                </div>
-
-                                <div className="mt-5 grid gap-3 md:grid-cols-3">
-                                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                                        <div className="flex items-center gap-2 text-white/[0.72]">
-                                            <Clock3 className="h-4 w-4 text-cyan-200" />
-                                            <span className="text-xs uppercase tracking-[0.2em]">Turno pico</span>
-                                        </div>
-                                        <p className="mt-3 text-sm leading-6 text-white/[0.62]">Mayor intensidad entre 6:30 y 8:30 con supervision prioritaria.</p>
-                                    </div>
-                                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                                        <div className="flex items-center gap-2 text-white/[0.72]">
-                                            <BarChart3 className="h-4 w-4 text-amber-200" />
-                                            <span className="text-xs uppercase tracking-[0.2em]">Metricas clave</span>
-                                        </div>
-                                        <p className="mt-3 text-sm leading-6 text-white/[0.62]">Vista corta de tickets, ocupacion y salud operativa por empresa.</p>
-                                    </div>
-                                    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-                                        <div className="flex items-center gap-2 text-white/[0.72]">
-                                            <Map className="h-4 w-4 text-cyan-200" />
-                                            <span className="text-xs uppercase tracking-[0.2em]">Topologia visual</span>
-                                        </div>
-                                        <p className="mt-3 text-sm leading-6 text-white/[0.62]">Capas de mapa, nodos y rutas para que el admin entienda rapido el contexto.</p>
+                                        <span className="text-[10px] font-medium text-cyan-300">AUN-248</span>
                                     </div>
                                 </div>
-                            </div>
+
+                                {/* Solicitud */}
+                                <motion.div
+                                    initial={{ opacity: 0, x: 50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 1.2, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                                    className="mx-4 mt-3.5 rounded-2xl border border-cyan-400/25 bg-cyan-900/20 px-4 py-3"
+                                >
+                                    <p className="text-[10px] uppercase tracking-widest text-cyan-300/70">Nueva solicitud</p>
+                                    <p className="mt-1 text-sm text-white/85">Pepe Flores quiere unirse a tu flota.</p>
+                                </motion.div>
+
+                                {/* Accesos rápidos */}
+                                <div className="mx-4 mt-3.5 mb-5 grid grid-cols-3 gap-2.5">
+                                    {[
+                                        { icon: Navigation, label: 'Rutas', color: 'text-cyan-300' },
+                                        { icon: Users, label: 'Personal', color: 'text-amber-300' },
+                                        { icon: ShieldCheck, label: 'Aprobar', color: 'text-emerald-300' },
+                                    ].map(({ icon: Icon, label, color }) => (
+                                        <div key={label} className="flex flex-col items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.04] py-3.5">
+                                            <Icon className={`h-5 w-5 ${color}`} />
+                                            <span className="text-[10px] text-white/50">{label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Home indicator */}
+                                <div className="flex justify-center pb-4">
+                                    <div className="h-1 w-20 rounded-full bg-white/20" />
+                                </div>
+                            </motion.div>
+
+                            {/* Tarjeta flotante izquierda */}
+                            <motion.div
+                                animate={{ y: [0, 10, 0] }}
+                                transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
+                                className="absolute left-0 top-[32%] w-[148px] rounded-2xl border border-amber-300/20 bg-[rgba(8,20,34,0.92)] p-3.5 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl z-20"
+                            >
+                                <p className="text-[9px] uppercase tracking-widest text-white/40">Pendientes</p>
+                                <p className="mt-2 font-display text-3xl text-amber-300">3</p>
+                                <p className="mt-1 text-[11px] leading-4 text-white/50">choferes esperando aprobación</p>
+                            </motion.div>
+
+                            {/* Tarjeta flotante derecha */}
+                            <motion.div
+                                animate={{ y: [0, -10, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                                className="absolute right-0 bottom-[18%] w-[138px] rounded-2xl border border-emerald-400/20 bg-[rgba(8,20,34,0.92)] p-3.5 shadow-[0_24px_60px_rgba(0,0,0,0.45)] backdrop-blur-xl z-20"
+                            >
+                                <p className="text-[9px] uppercase tracking-widest text-white/40">Flota activa</p>
+                                <p className="mt-2 font-display text-3xl text-emerald-300">12</p>
+                                <p className="mt-1 text-[11px] leading-4 text-white/50">combis operando ahora</p>
+                            </motion.div>
                         </motion.div>
                     </section>
 
@@ -446,11 +395,11 @@ export default function LandingPage() {
                             <div className="max-w-2xl">
                                 <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/[0.76]">Acceso interno</p>
                                 <h2 className="mt-3 font-display text-3xl text-white md:text-4xl">
-                                    Diseñado para Super Admin RumboYa, admins de empresa y equipos de soporte operativo.
+                                    Diseñado para empresas de transporte que quieren operar con visibilidad real.
                                 </h2>
                                 <p className="mt-4 text-sm leading-7 text-white/[0.66]">
-                                    Desde aqui se proyectan el monitoreo en vivo, la gestion de choferes, el route builder,
-                                    la moderacion de incidencias y las metricas generales del servicio.
+                                    Desde aquí se gestionan choferes, cobradores, códigos de vinculación
+                                    y el estado operativo de cada unidad conectada a la app móvil.
                                 </p>
                             </div>
                             <button
@@ -544,6 +493,6 @@ export default function LandingPage() {
                     `,
                 }}
             />
-        </div>
+        </div >
     );
 }

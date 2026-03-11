@@ -116,6 +116,34 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Solicitar recuperación de contraseña
+    const forgotPassword = async (email) => {
+        try {
+            const response = await api.post(`/api/auth/forgot-password?email=${encodeURIComponent(email)}`);
+            return response.data;
+        } catch (error) {
+            console.error("Error al solicitar recuperación de contraseña: ", error.response?.data);
+            throw error;
+        }
+    };
+
+    // Restablecer contraseña con token
+    const resetPassword = async (token, newPassword, confirmPassword) => {
+        try {
+            const response = await api.post('/api/auth/reset-password', null, {
+                params: {
+                    token,
+                    newPassword,
+                    confirmPassword
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error al restablecer contraseña: ", error.response?.data);
+            throw error;
+        }
+    };
+
     // Cierra sesión
     const logout = () => {
         Cookies.remove('token');
@@ -135,6 +163,8 @@ export const AuthProvider = ({ children }) => {
                 companyDetails,
                 login,
                 registerCompany,
+                forgotPassword,
+                resetPassword,
                 logout,
             }}
         >

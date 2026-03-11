@@ -57,26 +57,15 @@ export default function Login() {
         const result = await login(credentials.email, credentials.password);
 
         if (result.success) {
-            // Evaluamos el rol para redirigir
             if (result.role === 'EMPRESA') {
                 navigate('/company');
-            } else if (result.role === 'SUPER_ADMIN') {
-                navigate('/admin');
             } else {
-                // Si entra un rol que no debería estar aquí, lo expulsamos xd
-                setError('Este panel es solo para Empresas o Administradores.');
+                setError('Este panel es exclusivo para empresas de transporte registradas.');
             }
         } else {
             setError(result.message);
         }
         setIsLoading(false);
-    };
-
-    const handleLoginSuperAdmin = (event) => {
-        event.preventDefault();
-        // Podríamos usar el mismo login pero forzando una UI u opciones distintas.
-        // Aquí simplificamos compartiendo validación.
-        handleLoginCompany(event);
     };
 
     return (
@@ -108,59 +97,52 @@ export default function Login() {
                     </div>
                 </header>
 
-                <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-                    <section className="flex flex-col justify-between rounded-[1.9rem] border border-white/[0.08] bg-[rgba(8,19,32,0.78)] p-7">
-                        <div>
-                            <div className="inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100">
-                                <ShieldCheck className="h-4 w-4" />
-                                Acceso de control operativo
+                <div className="mt-6 grid flex-1 gap-6 lg:grid-cols-2">
+                    <section className="flex flex-col gap-6 rounded-[1.9rem] border border-white/[0.08] bg-[rgba(8,19,32,0.78)] p-7">
+                        {/* Fila superior: badge + título + descripción */}
+                        <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
+                            <div>
+                                <div className="inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100">
+                                    <ShieldCheck className="h-4 w-4" />
+                                    Acceso de control operativo
+                                </div>
+                                <h1 className="mt-5 font-display text-[clamp(1.8rem,3vw,2.8rem)] leading-[1.1] tracking-[-0.03em] text-white">
+                                    El panel web para administrar tu empresa de transporte.
+                                </h1>
+                                <p className="mt-4 text-sm leading-7 text-white/[0.65]">
+                                    Supervisa flota, aprueba personal y gestiona códigos de vinculación
+                                    con la app móvil RumboYa.
+                                </p>
                             </div>
-
-                            <h1 className="mt-6 font-display text-[clamp(2.8rem,7vw,5.2rem)] leading-[0.9] tracking-[-0.04em] text-white">
-                                El punto de entrada al sistema web administrativo de RumboYa.
-                            </h1>
-
-                            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/[0.68]">
-                                Desde aquí ingresan el Super Admin de RumboYa y los admins de empresa para
-                                supervisar flota, aprobar choferes, registrar su empresa operadora, construir rutas
-                                y organizar el flujo conectado a la app celular.
-                            </p>
-
-                            <div className="mt-8 grid gap-4 md:grid-cols-3">
-                                {accessHighlights.map((item) => {
-                                    const Icon = item.icon;
-
-                                    return (
-                                        <article
-                                            key={item.title}
-                                            className="rounded-[1.6rem] border border-white/[0.08] bg-white/[0.05] p-5"
-                                        >
-                                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/18 bg-cyan-400/10 text-cyan-100">
-                                                <Icon className="h-5 w-5" />
-                                            </div>
-                                            <h2 className="mt-4 font-display text-2xl text-white">{item.title}</h2>
-                                            <p className="mt-3 text-sm leading-7 text-white/[0.62]">{item.description}</p>
-                                        </article>
-                                    );
-                                })}
+                            {/* Stats verticales */}
+                            <div className="hidden lg:flex flex-col gap-3 shrink-0">
+                                {[
+                                    { value: '24/7', label: 'Disponible' },
+                                    { value: 'v1.0', label: 'Release' },
+                                    { value: 'MVP', label: 'Fase actual' },
+                                ].map(({ value, label }) => (
+                                    <div key={label} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-center">
+                                        <p className="font-display text-lg text-white">{value}</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-white/40 mt-0.5">{label}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        <div className="mt-8 grid gap-4 md:grid-cols-2">
-                            <div className="rounded-[1.6rem] border border-white/[0.08] bg-[#06111b] p-5">
-                                <p className="text-xs uppercase tracking-[0.22em] text-white/[0.48]">Roles de acceso</p>
-                                <p className="mt-3 font-display text-2xl text-white">Super Admin y Admin de Empresa</p>
-                                <p className="mt-3 text-sm leading-7 text-white/[0.62]">
-                                    Control global para RumboYa y control operativo focalizado para cada flota.
-                                </p>
-                            </div>
-                            <div className="rounded-[1.6rem] border border-white/[0.08] bg-[#06111b] p-5">
-                                <p className="text-xs uppercase tracking-[0.22em] text-white/[0.48]">Alcance actual</p>
-                                <p className="mt-3 font-display text-2xl text-white">Control Operativo MVP</p>
-                                <p className="mt-3 text-sm leading-7 text-white/[0.62]">
-                                    Conecta la operación web con la estructura en tiempo real de vehículos y choferes.
-                                </p>
-                            </div>
+                        {/* Fila inferior: 3 módulos */}
+                        <div className="grid gap-3 md:grid-cols-3">
+                            {accessHighlights.map((item) => {
+                                const Icon = item.icon;
+                                return (
+                                    <article key={item.title} className="rounded-[1.4rem] border border-white/[0.08] bg-white/[0.04] p-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-300/18 bg-cyan-400/10 text-cyan-100">
+                                            <Icon className="h-4 w-4" />
+                                        </div>
+                                        <h2 className="mt-3 font-display text-base text-white">{item.title}</h2>
+                                        <p className="mt-2 text-xs leading-5 text-white/[0.58]">{item.description}</p>
+                                    </article>
+                                );
+                            })}
                         </div>
                     </section>
 
@@ -228,33 +210,22 @@ export default function Login() {
                                 </div>
                             </div>
 
-                            <div className="mt-4 flex items-center justify-between text-sm">
-                                <label className="flex items-center gap-2 text-white/[0.62]">
-                                    <input type="checkbox" className="h-4 w-4 rounded border-white/[0.16] bg-transparent text-primary-500" />
-                                    Mantener sesión
-                                </label>
-                                <a href="#" className="font-medium text-cyan-100 hover:text-white transition-colors">
-                                    Recuperar acceso
-                                </a>
-                            </div>
-
                             <div className="mt-8 space-y-3">
                                 <button
                                     type="submit"
                                     disabled={isLoading}
                                     className="group flex w-full items-center justify-center gap-3 rounded-2xl bg-cyan-400 px-4 py-4 font-display text-sm uppercase tracking-[0.22em] text-[#05111b] transition-all hover:-translate-y-0.5 hover:bg-cyan-300 disabled:opacity-50 disabled:hover:translate-y-0"
                                 >
-                                    {isLoading ? 'Autenticando...' : 'Entrar como empresa'}
+                                    {isLoading ? 'Autenticando...' : 'Ingresar al panel'}
                                     {!isLoading && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={handleLoginSuperAdmin}
-                                    disabled={isLoading}
-                                    className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/[0.12] bg-white/[0.04] px-4 py-4 font-display text-sm uppercase tracking-[0.22em] text-white transition-all hover:-translate-y-0.5 hover:bg-white/[0.08] disabled:opacity-50"
+
+                                <Link
+                                    to="/forgot-password"
+                                    className="block text-center text-xs font-medium text-cyan-100 hover:text-white transition-colors"
                                 >
-                                    Entrar como super admin
-                                </button>
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
                             </div>
 
                             <div className="mt-6 flex flex-col items-center justify-center gap-2">

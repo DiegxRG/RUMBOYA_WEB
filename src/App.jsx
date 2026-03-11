@@ -6,7 +6,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import RegisterCompany from './pages/RegisterCompany';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import CompanyAdminDashboard from './pages/CompanyAdminDashboard';
 
 // Rutas Generales de la App
@@ -19,13 +20,10 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<RegisterCompany />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Rutas Privadas */}
-        <Route path="/admin/*" element={
-          <ProtectedRoute requiredRole="SUPER_ADMIN">
-            <SuperAdminDashboard />
-          </ProtectedRoute>
-        } />
         <Route path="/company/*" element={
           <ProtectedRoute requiredRole="EMPRESA">
             <CompanyAdminDashboard />
@@ -61,11 +59,8 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // Si la ruta exigía un rol particular que el usuario no tiene:
+  // Solo se admite el rol EMPRESA
   if (requiredRole && user?.role && user.role !== requiredRole) {
-    // Si es empresa y está intentando acceder a admin lo mandamos a company
-    if (user.role === 'EMPRESA') return <Navigate to="/company" replace />;
-    // Caso contrario al login general
     return <Navigate to="/login" replace />;
   }
 

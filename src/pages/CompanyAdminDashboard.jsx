@@ -2,14 +2,11 @@ import React from 'react';
 import { Routes, Route, Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
     Building2,
-    Clock3,
     KeyRound,
-    Route as RouteIcon,
     LogOut,
     BusFront,
     UserCheck,
     Clock,
-    AlertTriangle,
     Bell,
     Users,
     ShieldCheck,
@@ -25,6 +22,59 @@ import api from '../api/axiosConfig';
 const shellCard =
     'rounded-[1.8rem] border border-white/[0.08] bg-[rgba(8,19,32,0.76)] p-6 backdrop-blur-xl';
 
+// Configuración de rutas para el header dinámico
+const routeConfig = {
+    '/company': {
+        label: 'Portal administrativo de empresa',
+        title: 'Operación interna de flota y personal.',
+        subtitle: 'Supervisa la actividad de tus combis, revisa solicitudes de choferes y cobradores, y organiza el flujo operativo.',
+        actions: [
+            { label: 'Flota activa', style: 'amber', to: '/company/flota' },
+            { label: 'Choferes y códigos', style: 'cyan', to: '/company/codigos' },
+        ],
+    },
+    '/company/flota': {
+        label: 'Gestión de flota',
+        title: 'Flota y personal operativo.',
+        subtitle: 'Choferes activos, cobradores y unidades de la empresa. Supervisa asignaciones y estado actual.',
+        actions: [
+            { label: 'Resumen', style: 'amber', to: '/company' },
+            { label: 'Vincular personal', style: 'cyan', to: '/company/codigos' },
+        ],
+    },
+    '/company/codigos': {
+        label: 'Vinculación de flota',
+        title: 'Solicitudes y códigos.',
+        subtitle: 'Aprueba o rechaza solicitudes de choferes y cobradores. Gestiona los códigos de sincronización.',
+        actions: [
+            { label: 'Ver flota', style: 'amber', to: '/company/flota' },
+            { label: 'Resumen', style: 'cyan', to: '/company' },
+        ],
+    },
+    '/company/perfil': {
+        label: 'Ajustes de cuenta',
+        title: 'Perfil de empresa.',
+        subtitle: 'Información registrada, código de sincronización y datos de acceso al panel.',
+        actions: [
+            { label: 'Resumen', style: 'amber', to: '/company' },
+            { label: 'Ver flota', style: 'cyan', to: '/company/flota' },
+        ],
+    },
+};
+
+// Badge estático (solo muestra info, no navega)
+const BadgePill = ({ label, style }) => {
+    const styles = {
+        amber: 'border-amber-300/25 bg-amber-300/10 text-amber-100',
+        cyan: 'border-cyan-300/25 bg-cyan-400/10 text-cyan-100',
+    };
+    return (
+        <span className={`hidden sm:inline-flex items-center rounded-full border px-3 py-2 text-xs uppercase tracking-[0.2em] ${styles[style]}`}>
+            {label}
+        </span>
+    );
+};
+
 function CompanyLayout() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -35,10 +85,7 @@ function CompanyLayout() {
 
     const showNotification = (title, message, isWarning = false) => {
         toast.custom((t) => (
-            <div
-                className={`${t.visible ? 'animate-enter' : 'animate-leave'
-                    } max-w-sm w-full bg-[rgba(10,24,40,0.95)] shadow-[0_24px_50px_rgba(0,0,0,0.4)] rounded-2xl pointer-events-auto flex ring-1 ring-white/[0.1] backdrop-blur-xl border border-white/[0.08] p-4`}
-            >
+            <div className={`${t.visible ? 'animate-enter' : 'animate-leave'} max-w-sm w-full bg-[rgba(10,24,40,0.95)] shadow-[0_24px_50px_rgba(0,0,0,0.4)] rounded-2xl pointer-events-auto flex ring-1 ring-white/[0.1] backdrop-blur-xl border border-white/[0.08] p-4`}>
                 <div className="flex-1 w-0">
                     <div className="flex items-start">
                         <div className="flex-shrink-0 pt-0.5">
@@ -47,110 +94,89 @@ function CompanyLayout() {
                             </div>
                         </div>
                         <div className="ml-4 flex-1">
-                            <p className="text-sm font-medium text-white">
-                                {title}
-                            </p>
-                            <p className="mt-1 text-sm leading-5 text-white/[0.6]">
-                                {message}
-                            </p>
+                            <p className="text-sm font-medium text-white">{title}</p>
+                            <p className="mt-1 text-sm leading-5 text-white/[0.6]">{message}</p>
                         </div>
                     </div>
                 </div>
                 <div className="ml-4 flex flex-shrink-0 items-center">
-                    <button
-                        onClick={() => toast.dismiss(t.id)}
-                        className="inline-flex rounded-full p-1.5 text-white/[0.4] hover:bg-white/[0.08] hover:text-white transition-colors"
-                    >
+                    <button onClick={() => toast.dismiss(t.id)} className="inline-flex rounded-full p-1.5 text-white/[0.4] hover:bg-white/[0.08] hover:text-white transition-colors">
                         <X className="h-4 w-4" />
                     </button>
                 </div>
             </div>
-        ), {
-            id: title, // Usar el titulo como ID previene duplicados (ej. en StrictMode)
-            duration: 5000,
-        });
+        ), { id: title, duration: 5000 });
     };
 
     React.useEffect(() => {
         let isMounted = true;
+        let prevDriverCount = -1;
+        let prevCobradorCount = -1;
+        let isFirstFetch = true;
+
         const checkPendingRequests = async () => {
             try {
-                const res = await api.get('/api/empresas/me/conductores?estado=PENDIENTE');
-                const newCount = res.data?.length || 0;
+                const [driversRes, cobradoresRes] = await Promise.all([
+                    api.get('/api/empresas/me/conductores?estado=PENDIENTE'),
+                    api.get('/api/empresas/me/cobradores?estado=PENDIENTE').catch(() => ({ data: [] })),
+                ]);
+                if (!isMounted) return;
 
-                if (isMounted) {
-                    setPendingCount(prev => {
-                        if (initialLoad) {
-                            if (newCount > 0) {
-                                showNotification(
-                                    'Solicitudes en espera',
-                                    `Tienes ${newCount} ${newCount === 1 ? 'solicitud' : 'solicitudes'} pendiente${newCount === 1 ? '' : 's'} por revisar.`,
-                                    true
-                                );
-                                setHasUnread(true);
-                            }
-                        } else {
-                            if (newCount > prev) {
-                                showNotification(
-                                    'Nueva solicitud recibida',
-                                    'Un chofer acaba de enviar una solicitud para unirse a tu flota.',
-                                    false
-                                );
-                                setHasUnread(true);
-                            } else if (newCount === 0) {
-                                setHasUnread(false);
-                            }
-                        }
-                        return newCount;
-                    });
-                    setInitialLoad(false);
+                const driverCount = driversRes.data?.length || 0;
+                const cobradorCount = cobradoresRes.data?.length || 0;
+                const total = driverCount + cobradorCount;
+
+                if (isFirstFetch) {
+                    if (total > 0) {
+                        const parts = [];
+                        if (driverCount > 0) parts.push(`${driverCount} chofer${driverCount > 1 ? 'es' : ''}`);
+                        if (cobradorCount > 0) parts.push(`${cobradorCount} cobrador${cobradorCount > 1 ? 'es' : ''}`);
+                        showNotification('Solicitudes en espera', `Tienes solicitudes pendientes de: ${parts.join(' y ')}.`, true);
+                        setHasUnread(true);
+                    }
+                    isFirstFetch = false;
+                } else {
+                    if (driverCount > prevDriverCount && prevDriverCount >= 0) {
+                        showNotification('Nuevo chofer', 'Un chofer acaba de enviar una solicitud para unirse a tu flota.', false);
+                        setHasUnread(true);
+                    }
+                    if (cobradorCount > prevCobradorCount && prevCobradorCount >= 0) {
+                        showNotification('Nuevo cobrador', 'Un cobrador acaba de enviar una solicitud para unirse a tu flota.', false);
+                        setHasUnread(true);
+                    }
+                    if (total === 0) setHasUnread(false);
                 }
+
+                prevDriverCount = driverCount;
+                prevCobradorCount = cobradorCount;
+                setPendingCount(total);
             } catch (error) {
                 console.error("Error polling requests", error);
             }
         };
 
         checkPendingRequests();
-        // Poll every 15 seconds
         const interval = setInterval(checkPendingRequests, 15000);
-        return () => {
-            isMounted = false;
-            clearInterval(interval);
-        };
-    }, [initialLoad]);
+        return () => { isMounted = false; clearInterval(interval); };
+    }, []);
 
-    // Si logged user tiene un 'empresa' o 'razonSocial' lo pintamos
     const companyName = companyDetails?.razonSocial || user?.firstName || 'Mi Empresa';
-
     const isActive = (path) => location.pathname === path;
+    const handleLogout = () => { logout(); navigate('/login'); };
 
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
-    };
+    const currentRoute = routeConfig[location.pathname] || routeConfig['/company'];
+    const isHome = location.pathname === '/company';
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#07121d] text-white">
-            <Toaster
-                position="top-right"
-                toastOptions={{
-                    style: {
-                        background: 'rgba(8,19,32,0.9)',
-                        color: '#fff',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        backdropFilter: 'blur(8px)'
-                    }
-                }}
-            />
+            <Toaster position="top-right" toastOptions={{ style: { background: 'rgba(8,19,32,0.9)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' } }} />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(14,165,233,0.18),transparent_22%),radial-gradient(circle_at_86%_18%,rgba(250,204,21,0.16),transparent_22%),linear-gradient(160deg,#07111b_0%,#0b1827_48%,#050b13_100%)]" />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:120px_120px] opacity-20" />
 
             <div className="relative z-10 flex min-h-screen gap-6 px-5 py-5 md:px-6 lg:px-8">
+                {/* Sidebar */}
                 <aside className="hidden w-[18rem] shrink-0 flex-col rounded-[2rem] border border-white/[0.08] bg-[rgba(6,17,27,0.82)] p-5 backdrop-blur-xl md:flex">
-                    <Link
-                        to="/company/perfil"
-                        className="group flex items-center gap-3 rounded-[1.4rem] border border-white/[0.08] bg-white/[0.05] p-4 transition-all hover:bg-white/[0.08] hover:border-cyan-400/30"
-                    >
+                    <Link to="/company/perfil" className="group flex items-center gap-3 rounded-[1.4rem] border border-white/[0.08] bg-white/[0.05] p-4 transition-all hover:bg-white/[0.08] hover:border-cyan-400/30">
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-900 border border-cyan-400/50 transition-colors group-hover:border-cyan-400">
                             <span className="font-display text-lg text-cyan-200">{companyName.charAt(0).toUpperCase()}</span>
                         </div>
@@ -161,36 +187,23 @@ function CompanyLayout() {
                     </Link>
 
                     <div className="mt-6 flex flex-col flex-1 space-y-2">
-                        <Link
-                            to="/company"
-                            className={`flex items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm font-medium transition-all ${isActive('/company')
-                                ? 'border border-amber-300/20 bg-amber-300/10 text-white'
-                                : 'text-white/[0.62] hover:bg-white/[0.05] hover:text-white'
-                                }`}
-                        >
-                            <Building2 className="h-4 w-4" />
-                            <span>Resumen operativo</span>
-                        </Link>
-                        <Link
-                            to="/company/flota"
-                            className={`flex items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm font-medium transition-all ${isActive('/company/flota')
-                                ? 'border border-amber-300/20 bg-amber-300/10 text-white'
-                                : 'text-white/[0.62] hover:bg-white/[0.05] hover:text-white'
-                                }`}
-                        >
-                            <Users className="h-4 w-4" />
-                            <span>Flota y choferes</span>
-                        </Link>
-                        <Link
-                            to="/company/codigos"
-                            className={`flex items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm font-medium transition-all ${isActive('/company/codigos')
-                                ? 'border border-amber-300/20 bg-amber-300/10 text-white'
-                                : 'text-white/[0.62] hover:bg-white/[0.05] hover:text-white'
-                                }`}
-                        >
-                            <KeyRound className="h-4 w-4" />
-                            <span>Códigos</span>
-                        </Link>
+                        {[
+                            { to: '/company', label: 'Resumen operativo', icon: Building2 },
+                            { to: '/company/flota', label: 'Flota y choferes', icon: Users },
+                            { to: '/company/codigos', label: 'Códigos y solicitudes', icon: KeyRound },
+                        ].map(({ to, label, icon: Icon }) => (
+                            <Link
+                                key={to}
+                                to={to}
+                                className={`flex items-center gap-3 rounded-[1.2rem] px-4 py-3 text-sm font-medium transition-all ${isActive(to)
+                                    ? 'border border-amber-300/20 bg-amber-300/10 text-white'
+                                    : 'text-white/[0.62] hover:bg-white/[0.05] hover:text-white'
+                                    }`}
+                            >
+                                <Icon className="h-4 w-4" />
+                                <span>{label}</span>
+                            </Link>
+                        ))}
 
                         <div className="mt-auto pt-6 border-t border-white/[0.08]">
                             <button
@@ -206,17 +219,18 @@ function CompanyLayout() {
 
                 <main className="min-w-0 flex-1">
                     <div className="rounded-[2rem] border border-white/[0.08] bg-[rgba(6,17,27,0.62)] p-5 backdrop-blur-xl md:p-6 min-h-full">
-                        <header className="flex flex-col gap-4 rounded-[1.6rem] border border-white/[0.08] bg-white/[0.05] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div>
-                                <p className="text-xs uppercase tracking-[0.24em] text-amber-100/[0.72]">Portal administrativo de empresa</p>
-                                <h1 className="mt-2 font-display text-3xl text-white md:text-4xl">Operación interna de flota y personal.</h1>
-                                <p className="mt-3 max-w-3xl text-sm leading-7 text-white/[0.64]">
-                                    Supervisa la actividad de tus combis, revisa solicitudes de choferes y organiza el
-                                    flujo operativo conectado a la app móvil de RumboYa.
-                                </p>
-                            </div>
 
-                            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em]">
+                        {/* ── Header — mismo recuadro en todas las vistas ── */}
+                        <header className="flex flex-col gap-4 rounded-[1.6rem] border border-white/[0.08] bg-white/[0.05] px-5 py-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+                            <div>
+                                <p className="text-xs uppercase tracking-[0.24em] text-amber-100/[0.72]">{currentRoute.label}</p>
+                                <h1 className="mt-2 font-display text-3xl text-white md:text-4xl">{currentRoute.title}</h1>
+                                {isHome && (
+                                    <p className="mt-3 max-w-3xl text-sm leading-7 text-white/[0.64]">{currentRoute.subtitle}</p>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 shrink-0">
+                                {/* Campana */}
                                 <button
                                     onClick={() => setHasUnread(false)}
                                     title="Notificaciones"
@@ -224,20 +238,20 @@ function CompanyLayout() {
                                 >
                                     <Bell className="h-4 w-4 text-white/[0.7] group-hover:text-white" />
                                     {hasUnread && pendingCount > 0 && (
-                                        <span className="absolute top-2 right-2.5 flex h-2 w-2">
+                                        <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                                         </span>
                                     )}
                                 </button>
-                                <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-2 text-amber-100 hidden sm:inline-block">Flota activa</span>
-                                <span className="rounded-full border border-cyan-300/18 bg-cyan-400/10 px-3 py-2 text-cyan-100 hidden sm:inline-block">Choferes y códigos</span>
+                                {/* Badges estáticos informativos */}
+                                {currentRoute.actions.map(({ label, style }) => (
+                                    <BadgePill key={label} label={label} style={style} />
+                                ))}
                             </div>
                         </header>
 
-                        <div className="mt-6">
-                            <Outlet />
-                        </div>
+                        <Outlet />
                     </div>
                 </main>
             </div>
@@ -247,50 +261,65 @@ function CompanyLayout() {
 
 function DashboardHome() {
     const { companyDetails } = useAuth();
-    const [pendingConductores, setPendingConductores] = React.useState([]);
-    const [activeConductores, setActiveConductores] = React.useState([]);
-    const [isLoadingRequests, setIsLoadingRequests] = React.useState(true);
+    const [pendingDrivers, setPendingDrivers] = React.useState([]);
+    const [pendingCobradores, setPendingCobradores] = React.useState([]);
+    const [activeDrivers, setActiveDrivers] = React.useState([]);
+    const [activeCobradores, setActiveCobradores] = React.useState([]);
+    const [isLoading, setIsLoading] = React.useState(true);
     const [actionLoading, setActionLoading] = React.useState(null);
 
-    const activeFleet = activeConductores.filter(v => v.placaAuto).length;
+    const activeFleet = activeDrivers.filter(v => v.placaAuto).length;
     const activeCodes = companyDetails?.codigoSincronizacion ? 1 : 0;
-    const activeIncidents = 0; // Temporarily 0 until incidents API is available
+    const totalPending = pendingDrivers.length + pendingCobradores.length;
+    const isNewAdmin = !isLoading && activeDrivers.length === 0 && activeCobradores.length === 0;
 
-    const fetchRequests = async () => {
+    const fetchRequests = React.useCallback(async () => {
         try {
-            setIsLoadingRequests(true);
-            const [pendingRes, approvedRes] = await Promise.all([
+            setIsLoading(true);
+            const [pendingDr, approvedDr, pendingCob, approvedCob] = await Promise.all([
                 api.get('/api/empresas/me/conductores?estado=PENDIENTE'),
-                api.get('/api/empresas/me/conductores?estado=APROBADA')
+                api.get('/api/empresas/me/conductores?estado=APROBADA'),
+                api.get('/api/empresas/me/cobradores?estado=PENDIENTE').catch(() => ({ data: [] })),
+                api.get('/api/empresas/me/cobradores?estado=APROBADA').catch(() => ({ data: [] })),
             ]);
-            setPendingConductores(pendingRes.data || []);
-            setActiveConductores(approvedRes.data || []);
+            setPendingDrivers(pendingDr.data || []);
+            setActiveDrivers(approvedDr.data || []);
+            setPendingCobradores(pendingCob.data || []);
+            setActiveCobradores(approvedCob.data || []);
         } catch (error) {
             console.error("Error fetching requests", error);
         } finally {
-            setIsLoadingRequests(false);
+            setIsLoading(false);
         }
-    };
-
-    React.useEffect(() => {
-        fetchRequests();
     }, []);
 
-    const handleAction = async (conductorId, aprobar) => {
+    React.useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+    const handleDriverAction = async (id, aprobar) => {
+        setActionLoading(`driver-${id}`);
         try {
-            setActionLoading(conductorId);
-            await api.put(`/api/empresas/me/conductores/${conductorId}/sincronizacion?aprobar=${aprobar}`);
-            // Recargar la lista después de la acción
+            await api.put(`/api/empresas/me/conductores/${id}/sincronizacion?aprobar=${aprobar}`);
             fetchRequests();
-        } catch (error) {
-            console.error("Error resolviendo la solicitud", error);
-            alert("No se pudo procesar la solicitud. Intenta de nuevo.");
+        } catch (err) {
+            console.error("Error en acción de conductor", err);
         } finally {
             setActionLoading(null);
         }
     };
 
-    if (isLoadingRequests) {
+    const handleCobradorAction = async (id, aprobar) => {
+        setActionLoading(`cobrador-${id}`);
+        try {
+            await api.put(`/api/empresas/me/cobradores/${id}/sincronizacion?aprobar=${aprobar}`);
+            fetchRequests();
+        } catch (err) {
+            console.error("Error en acción de cobrador", err);
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-cyan-500 border-t-transparent"></div>
@@ -301,13 +330,12 @@ function DashboardHome() {
 
     return (
         <div className="space-y-6">
+            {/* KPIs */}
             <div className="grid gap-4 xl:grid-cols-4">
                 <article className={shellCard}>
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Combis activas</p>
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-900/30 border border-cyan-400/20 text-cyan-400">
-                            <BusFront className="h-5 w-5" />
-                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-900/30 border border-cyan-400/20 text-cyan-400"><BusFront className="h-5 w-5" /></div>
                     </div>
                     <p className="font-display text-4xl text-white">{activeFleet}</p>
                     <p className="mt-3 text-sm leading-7 text-white/[0.62]">Unidades transmitiendo actividad en la ruta.</p>
@@ -315,93 +343,121 @@ function DashboardHome() {
                 <article className={shellCard}>
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Choferes registrados</p>
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-900/30 border border-emerald-400/20 text-emerald-400">
-                            <UserCheck className="h-5 w-5" />
-                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-900/30 border border-emerald-400/20 text-emerald-400"><UserCheck className="h-5 w-5" /></div>
                     </div>
-                    <p className="font-display text-4xl text-white">{activeConductores.length}</p>
+                    <p className="font-display text-4xl text-white">{activeDrivers.length}</p>
                     <p className="mt-3 text-sm leading-7 text-white/[0.62]">Operadores vinculados y listos para supervisión.</p>
                 </article>
                 <article className={shellCard}>
                     <div className="flex items-center justify-between mb-4">
                         <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Solicitudes pendientes</p>
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-900/30 border border-amber-400/20 text-amber-400">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${totalPending > 0 ? 'bg-amber-900/30 border border-amber-400/20 text-amber-400' : 'bg-white/[0.04] border border-white/[0.08] text-white/[0.4]'}`}>
                             <Clock className="h-5 w-5" />
                         </div>
                     </div>
-                    <p className="font-display text-4xl text-white">{pendingConductores.length}</p>
-                    <p className="mt-3 text-sm leading-7 text-white/[0.62]">Choferes esperando sincronizar con tu flota.</p>
+                    <p className={`font-display text-4xl ${totalPending > 0 ? 'text-amber-300' : 'text-white'}`}>{totalPending}</p>
+                    <p className="mt-3 text-sm leading-7 text-white/[0.62]">
+                        {pendingDrivers.length > 0 && `${pendingDrivers.length} chofer${pendingDrivers.length > 1 ? 'es' : ''}`}
+                        {pendingDrivers.length > 0 && pendingCobradores.length > 0 && ' · '}
+                        {pendingCobradores.length > 0 && `${pendingCobradores.length} cobrador${pendingCobradores.length > 1 ? 'es' : ''}`}
+                        {totalPending === 0 && 'Sin solicitudes pendientes.'}
+                    </p>
                 </article>
                 <article className={shellCard}>
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Alertas del servicio</p>
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-900/30 border border-red-400/20 text-red-400">
-                            <AlertTriangle className="h-5 w-5" />
-                        </div>
+                        <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Cobradores activos</p>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-900/30 border border-purple-400/20 text-purple-400"><Users className="h-5 w-5" /></div>
                     </div>
-                    <p className="font-display text-4xl text-white">{activeIncidents}</p>
-                    <p className="mt-3 text-sm leading-7 text-white/[0.62]">Incidencias y desvío operativo que afectan la jornada.</p>
+                    <p className="font-display text-4xl text-white">{activeCobradores.length}</p>
+                    <p className="mt-3 text-sm leading-7 text-white/[0.62]">Cobradores vinculados y operando con la flota.</p>
                 </article>
             </div>
 
+            {/* Banner onboarding — solo para admin sin personal aún */}
+            {isNewAdmin && (
+                <div className="rounded-[1.6rem] border border-amber-300/20 bg-amber-300/[0.06] p-5">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                            <p className="text-xs uppercase tracking-widest text-amber-300/70">Primeros pasos</p>
+                            <p className="mt-2 font-display text-xl text-white">Vincula tu primer chofer en 3 pasos.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs">
+                            {[
+                                { n: '1', label: 'Comparte el código de la empresa' },
+                                { n: '2', label: 'El chofer solicita desde la app' },
+                                { n: '3', label: 'Aprueba aquí en Solicitudes' },
+                            ].map(({ n, label }) => (
+                                <div key={n} className="flex items-center gap-2 rounded-full border border-white/[0.1] bg-white/[0.05] px-4 py-2 text-white/70">
+                                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-300/20 text-[10px] font-bold text-amber-200">{n}</span>
+                                    {label}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+                {/* Actividad reciente */}
                 <section className={shellCard}>
                     <div className="flex items-center justify-between gap-4">
                         <div>
                             <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Actividad reciente</p>
-                            <h2 className="mt-2 font-display text-3xl text-white">Choferes, códigos y estado de flota.</h2>
+                            <h2 className="mt-2 font-display text-2xl text-white">Choferes, cobradores y estado de flota.</h2>
                         </div>
-                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-amber-100">
+                        <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-2 text-xs uppercase tracking-[0.2em] text-amber-100 shrink-0">
                             <ShieldCheck className="h-4 w-4" />
                             Supervisado
                         </div>
                     </div>
 
-                    <div className="mt-5 space-y-4">
-                        {isLoadingRequests ? (
-                            <p className="text-sm text-white/[0.5] py-4 text-center">Cargando solicitudes...</p>
-                        ) : pendingConductores.length === 0 ? (
+                    <div className="mt-5 space-y-3">
+                        {totalPending === 0 && (
                             <div className="rounded-[1.5rem] border border-white/[0.08] bg-white/[0.02] p-8 text-center">
                                 <p className="text-sm text-white/[0.5]">No hay solicitudes pendientes en este momento.</p>
                             </div>
-                        ) : (
-                            pendingConductores.map((driver) => (
-                                <div key={driver.id} className="rounded-[1.5rem] border border-cyan-400/20 bg-cyan-900/10 p-4 relative overflow-hidden">
-                                    {actionLoading === driver.id && (
-                                        <div className="absolute inset-0 bg-[#07111b]/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                                            <div className="h-5 w-5 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                        <div>
-                                            <p className="font-medium text-white">{driver.user?.firstName} {driver.user?.lastName}</p>
-                                            <p className="mt-1 flex items-center gap-2 text-sm text-white/[0.58]">
-                                                <span className="inline-block bg-white/[0.1] px-2 py-0.5 rounded text-xs">{driver.codigoConductor}</span>
-                                                • Placa: <span className="text-cyan-200">{driver.placaAuto}</span>
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-2 shrink-0">
-                                            <button
-                                                onClick={() => handleAction(driver.id, false)}
-                                                disabled={actionLoading === driver.id}
-                                                className="rounded-full border border-red-400/30 bg-red-400/10 hover:bg-red-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-red-200 transition-colors disabled:opacity-50"
-                                            >
-                                                Rechazar
-                                            </button>
-                                            <button
-                                                onClick={() => handleAction(driver.id, true)}
-                                                disabled={actionLoading === driver.id}
-                                                className="rounded-full border border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-400 hover:text-emerald-950 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300 transition-colors disabled:opacity-50"
-                                            >
-                                                Aprobar
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
                         )}
 
-                        {activeConductores.filter(d => d.placaAuto).map((driver) => (
+                        {/* Pendientes — Choferes */}
+                        {pendingDrivers.length > 0 && (
+                            <div>
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-emerald-400/70 mb-2 px-1">Choferes • Pendientes</p>
+                                {pendingDrivers.map((driver) => (
+                                    <PendingCard
+                                        key={`dr-${driver.id}`}
+                                        name={`${driver.user?.firstName} ${driver.user?.lastName}`}
+                                        sub={driver.codigoConductor}
+                                        detail={driver.placaAuto ? `Placa: ${driver.placaAuto}` : driver.user?.email}
+                                        isLoading={actionLoading === `driver-${driver.id}`}
+                                        onApprove={() => handleDriverAction(driver.id, true)}
+                                        onReject={() => handleDriverAction(driver.id, false)}
+                                        color="cyan"
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Pendientes — Cobradores */}
+                        {pendingCobradores.length > 0 && (
+                            <div>
+                                <p className="text-[10px] uppercase font-bold tracking-widest text-cyan-400/70 mb-2 px-1">Cobradores • Pendientes</p>
+                                {pendingCobradores.map((cob) => (
+                                    <PendingCard
+                                        key={`cob-${cob.id}`}
+                                        name={`${cob.user?.firstName} ${cob.user?.lastName}`}
+                                        sub={cob.codigoCobrador}
+                                        detail={`DNI: ${cob.dni || '—'}`}
+                                        isLoading={actionLoading === `cobrador-${cob.id}`}
+                                        onApprove={() => handleCobradorAction(cob.id, true)}
+                                        onReject={() => handleCobradorAction(cob.id, false)}
+                                        color="purple"
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Combis activas */}
+                        {activeDrivers.filter(d => d.placaAuto).slice(0, 4).map((driver) => (
                             <div key={driver.id} className="rounded-[1.5rem] border border-white/[0.08] bg-[#07111b] p-4">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                     <div>
@@ -411,64 +467,64 @@ function DashboardHome() {
                                             {driver.ruta && <span className="px-2 py-0.5 rounded bg-white/[0.05] text-xs truncate max-w-[200px]">{driver.ruta}</span>}
                                         </p>
                                     </div>
-                                    <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-400/[0.15] text-emerald-100">
-                                        En Ruta
-                                    </span>
+                                    <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-400/[0.15] text-emerald-100">En Ruta</span>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                <section className="space-y-6">
+                {/* Sidebar derecho — solo código de sincronización */}
+                <section>
                     <article className={shellCard}>
-                        <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Códigos de invitación</p>
-                        <p className="mt-3 font-display text-4xl text-white">{activeCodes}</p>
-                        <p className="mt-3 text-sm leading-7 text-white/[0.62]">
-                            Códigos activos para vincular nuevos choferes desde la app móvil.
-                        </p>
-
-                        <div className="mt-5 space-y-3">
+                        <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Código de vinculación</p>
+                        <p className="mt-3 text-sm text-white/[0.58]">Comparte este código con choferes y cobradores para que puedan solicitar unirse desde la app.</p>
+                        <div className="mt-5">
                             {companyDetails?.codigoSincronizacion ? (
                                 <div className="rounded-[1.4rem] border border-cyan-400/20 bg-cyan-900/10 p-4">
                                     <div className="flex items-center justify-between gap-3">
-                                        <p className="font-display text-xl text-white">{companyDetails.codigoSincronizacion}</p>
-                                        <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-400/[0.15] text-emerald-100">
-                                            Activo
-                                        </span>
+                                        <p className="font-display text-2xl text-white tracking-widest">{companyDetails.codigoSincronizacion}</p>
+                                        <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-400/[0.15] text-emerald-100">Activo</span>
                                     </div>
-                                    <p className="mt-2 text-sm text-white/[0.58]">Válido hasta {new Date(companyDetails.codigoExpiracion || new Date()).toLocaleString()}</p>
+                                    <p className="mt-2 text-xs text-white/[0.45]">Válido hasta {new Date(companyDetails.codigoExpiracion || new Date()).toLocaleString()}</p>
                                 </div>
                             ) : (
-                                <p className="text-sm text-white/[0.5]">No se encontró un código de invitación activo.</p>
+                                <p className="text-sm text-white/[0.5]">No hay código activo. Ve a tu perfil para generarlo.</p>
                             )}
                         </div>
                     </article>
-
-                    <article className={shellCard}>
-                        <p className="text-xs uppercase tracking-[0.22em] text-white/[0.46]">Contexto operativo</p>
-                        <div className="mt-4 space-y-3">
-                            <div className="rounded-[1.4rem] border border-white/[0.08] bg-white/[0.04] p-4">
-                                <div className="flex items-center gap-3 text-amber-100">
-                                    <RouteIcon className="h-4 w-4" />
-                                    <span className="text-xs uppercase tracking-[0.2em]">Rutas asignadas</span>
-                                </div>
-                                <p className="mt-3 text-sm leading-7 text-white/[0.62]">
-                                    La empresa administra rutas, horarios y paraderos desde el panel web.
-                                </p>
-                            </div>
-                            <div className="rounded-[1.4rem] border border-white/[0.08] bg-white/[0.04] p-4">
-                                <div className="flex items-center gap-3 text-cyan-100">
-                                    <Clock3 className="h-4 w-4" />
-                                    <span className="text-xs uppercase tracking-[0.2em]">Jornada crítica</span>
-                                </div>
-                                <p className="mt-3 text-sm leading-7 text-white/[0.62]">
-                                    Hora punta y soporte a incidencias requieren coordinación entre flota y soporte.
-                                </p>
-                            </div>
-                        </div>
-                    </article>
                 </section>
+            </div>
+        </div>
+    );
+}
+
+/* Tarjeta de solicitud pendiente reutilizable */
+function PendingCard({ name, sub, detail, isLoading, onApprove, onReject, color }) {
+    const borderColor = color === 'purple' ? 'border-purple-400/20 bg-purple-900/10' : 'border-cyan-400/20 bg-cyan-900/10';
+    return (
+        <div className={`rounded-[1.5rem] border ${borderColor} p-4 relative overflow-hidden mb-2`}>
+            {isLoading && (
+                <div className="absolute inset-0 bg-[#07111b]/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                    <div className="h-5 w-5 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
+                </div>
+            )}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p className="font-medium text-white">{name}</p>
+                    <p className="mt-1 flex items-center gap-2 text-sm text-white/[0.58]">
+                        {sub && <span className="inline-block bg-white/[0.1] px-2 py-0.5 rounded text-xs">{sub}</span>}
+                        {detail && <span className="text-white/[0.5]">{detail}</span>}
+                    </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <button onClick={onReject} disabled={isLoading} className="rounded-full border border-red-400/30 bg-red-400/10 hover:bg-red-400/20 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-red-200 transition-colors disabled:opacity-50">
+                        Rechazar
+                    </button>
+                    <button onClick={onApprove} disabled={isLoading} className="rounded-full border border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-400 hover:text-emerald-950 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300 transition-colors disabled:opacity-50">
+                        Aprobar
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -488,4 +544,3 @@ function CompanyAdminDashboard() {
 }
 
 export default CompanyAdminDashboard;
-
